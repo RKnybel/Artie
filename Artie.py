@@ -54,18 +54,18 @@ def adjust_mood(mod): #changes the moodFloat by a certain amount, enforcing the 
         moodFloat = 0.0 # set moodFloat to the minimum
 
 def initialize_configfile(): #creates a template config file
-    configFile['BotAPI'] = {'BotToken' : 'Bot token goes here', #define bot parameters
+	configFile['BotAPI'] = {'BotToken' : 'Bot token goes here', #define bot parameters
                         'BotName' : 'Bot name goes here',
                         'BotAuthor' : 'Bot author\'s name goes here',
                         'convowakeword' : 'Artie'}
 
-   	configfile['Custom Responses'] = {'Hello' : 'Hi!'} #define one template custom response
+	configFile['Custom Responses'] = {'Hello' : 'Hi!'} #define one template custom response
 
-    with open('config.txt', 'w+') as configfile: #set the config file name and permissions
-        configFile.write(configfile); #write the config file
+	with open('config.txt', 'w+') as configfile: #set the config file name and permissions
+		configFile.write(configfile); #write the config file
 
-    print('Please edit the newly created config.txt file and run the script again.\n') #ask the user to edit the config file
-    sys.exit() #close the application
+	print('Please edit the newly created config.txt file and run the script again.\n') #ask the user to edit the config file
+	sys.exit() #close the application
 
 def get_channel(channels, channel_name): #helper function to get a Discord channel object
     for channel in client.get_all_channels():
@@ -133,17 +133,22 @@ async def on_ready(): #when the bot is connected and logged into Discord..
 
 #ACTUAL CODE--------------------------------------------
 
+#read/create the supporting data files
 try:
-    fileExists = open('config.txt', 'r') #Try to load the config file
+	fileExists = open('config.txt', 'r') #Try to load the config file
 
-    configFile.sections() #no idea what this does to be honest
-    configFile.read('config.txt') #load the config file
+	configFile.sections() #no idea what this does to be honest
+	configFile.read('config.txt') #load the config file
 
-    botToken = configFile['BotAPI']['BotToken'] #store the bot token in the variable
-    botName = configFile['BotAPI']['BotName'] #store the bot name in the variable
-    botAuthor = configFile['BotAPI']['BotAuthor'] #store the bot author in the variable
-    convowakeword = configFile['BotAPI']['convowakeword'] #store the wake word in the variable
+	botToken = configFile['BotAPI']['BotToken'] #store the bot token in the variable
+	botName = configFile['BotAPI']['BotName'] #store the bot name in the variable
+	botAuthor = configFile['BotAPI']['BotAuthor'] #store the bot author in the variable
+	convowakeword = configFile['BotAPI']['convowakeword'] #store the wake word in the variable
+	with codecs.open('suggestions.csv', 'a+', encoding='utf8') as suggestionFile: #create the suggestions file if it doesn't already exist
+		suggestionFile.close() #close the suggestion file
 except: #if the config file cannot be loaded properly
     initialize_configfile() #run the initialize_configfile function
+    with codecs.open('suggestions.csv', 'a+', encoding='utf8') as suggestionFile: #create the suggestions file if it doesn't already exist
+    	suggestionFile.close() #close the suggestion file
 
 client.run(botToken) #start the bot and its callback functions
