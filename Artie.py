@@ -165,9 +165,9 @@ try:
     learnedArtFile.sections() #initialize learned art file sections
     learnedArtFile.read('learned.art') #load the learned art file
 
-    botToken = configFile['BotAPI']['BotToken'] #store the bot token in the variable
-    botName = configFile['BotAPI']['BotName'] #store the bot name in the variable
-    botAuthor = configFile['BotAPI']['BotAuthor'] #store the bot author in the variable
+    botToken = configFile['BotAPI']['bottoken'] #store the bot token in the variable
+    botName = configFile['BotAPI']['botname'] #store the bot name in the variable
+    botAuthor = configFile['BotAPI']['botauthor'] #store the bot author in the variable
     convowakeword = configFile['BotAPI']['convowakeword'] #store the wake word in the variable
     with codecs.open('suggestions.csv', 'a+', encoding='utf8') as suggestionFile: #create the suggestions file if it doesn't already exist
                 suggestionFile.close() #close the suggestion file
