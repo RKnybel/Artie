@@ -170,7 +170,7 @@ try:
     botAuthor = configFile['BotAPI']['botauthor'] #store the bot author in the variable
     convowakeword = configFile['BotAPI']['convowakeword'] #store the wake word in the variable
     with codecs.open('suggestions.csv', 'a+', encoding='utf8') as suggestionFile: #create the suggestions file if it doesn't already exist
-                suggestionFile.close() #close the suggestion file
+        suggestionFile.close() #close the suggestion file
 except: #if the config file cannot be loaded properly
     initialize_configfile() #run the initialize_configfile function
     with codecs.open('suggestions.csv', 'a+', encoding='utf8') as suggestionFile: #create the suggestions file if it doesn't already exist
