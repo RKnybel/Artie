@@ -25,6 +25,11 @@ import os
 import re
 from discord.utils import get
 
+#AI Chatbot Setup
+from chatterbot import ChatBot
+from chatterbot.trainers import ChatterBotCorpusTrainer
+from chatterbot.trainers import ListTrainer
+
 #VARIABLES--------------------------------------------
 
 #This block of variables is populated by the values in the config file. Changes made here will not hold.
@@ -44,8 +49,38 @@ coreArtFile = configparser.ConfigParser()
 learnedArtFile = configparser.ConfigParser()
 
 #Global variables
-versionNumber = '0.03'
+versionNumber = '0.05'
 moodFloat = 0.8;
+
+print('Artie is starting! (Version ' + versionNumber + ')')
+
+print('Initializing/Training AI Chatbot...')
+
+#INITIALIZE AND TRAIN AI CHATBOT
+bot = ChatBot( #define tha chatbot
+    'Artie',
+    storage_adapter='chatterbot.storage.SQLStorageAdapter',
+    logic_adapters=[
+        'chatterbot.logic.MathematicalEvaluation',
+    #    'chatterbot.logic.TimeLogicAdapter',
+        'chatterbot.logic.BestMatch'
+        ],
+    database_uri='sqlite:///database.sqlite3'
+)
+
+#trainer = ChatterBotCorpusTrainer(bot) #set bot trainer to corpus
+bot.set_trainer(ListTrainer) #set bot training to ListTrainer
+
+#trainer.train(
+#    "chatterbot.corpus.english"
+#    )
+
+data = open('ArtieTrainingData.txt').read() #open the training file
+processedData = data.strip().split('\n') #convert the text data to a list data type
+
+bot.train(processedData) #train the bot with the processed training file
+
+print('Done Training! Connecting to Discord...')
 
 #FUNCTIONS--------------------------------------------
 
@@ -65,8 +100,7 @@ async def type_message(destination_channel, message_text): #'types' and posts a 
 
     await client.send_typing(destination_channel) #set the typing status in Discord client
 
-    for characterIndex in range(len(message_text)): #for every character in message_text...
-        await asyncio.sleep(0.03) #wait 0.03 seconds
+    await asyncio.sleep(0.03 * len(str(message_text))) #wait 0.03 seconds
 
     await client.send_message(destination_channel, message_text) #send the message in Discord client
 
@@ -111,12 +145,12 @@ async def help(messageObject):#Help command for users
 async def wolfpic(messageObject):#Sends a random wolf image in chat
     msg = ':wolf: Here\'s your wolfie:'
     wolfiefile = random.choice(os.listdir('images/wolves'))
-    await client.send_file(message.channel, 'images/wolves/' + wolfiefile, content=msg)
+    await client.send_file(messageObject.channel, 'images/wolves/' + wolfiefile, content=msg)
 
 async def catpic(messageObject):#Sends a random cat image in chat
     msg = ':smiley_cat: Here\'s your kitty:'
     kittyfile = random.choice(os.listdir('images/cats'))
-    await client.send_file(message.channel, 'images/cats/' + kittyfile, content=msg)
+    await client.send_file(messageObject.channel, 'images/cats/' + kittyfile, content=msg)
 
 async def dice(messageObject):#Rolls dice and sends the results in chat
     helpMsg = "**Usage:** ~dice [number of dice] [number of sides]\n **Example:** ~dice 2 6"
@@ -370,6 +404,15 @@ async def commandNotFound(messageObject):#Tries to run the response thingy
     suggestionTimeString = str(suggestionTime); #create a time string
     print("Unexpected message: ", suggestionTimeString, ', ', messageObject.author, ', ', messageObject.content); #print info about the unexpected message to the console
 
+async def commandNotFoundAI(messageObject):#Tries to run the response thingy
+    if configFile['BotAPI']['convowakeword'].lower() in messageObject.content.lower(): #if the bot's name is in the message...
+        bot_output = bot.get_response(messageObject.content)
+        await type_message(messageObject.channel, bot_output)
+    if messageObject.content.lower().startswith('a.'):
+        bot_output = bot.get_response(messageObject.content[2:])
+        await type_message(messageObject.channel, bot_output)
+
+
 #DISCORD CLIENT FUNCTIONS--------------------------------------------
 
 @client.event
@@ -437,7 +480,7 @@ async def on_message(message): #when a message is sent in a channel Artie can se
         await customRole(message)
         return
 
-    await commandNotFound(message)
+    await commandNotFoundAI(message)
 
 
 @client.event
