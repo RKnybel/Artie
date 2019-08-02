@@ -1,6 +1,6 @@
 """
 Works with Python 3.6!
-Artie.py, version 0.1
+Artie.py
 Authored by Riley Knybel
 Published under the Unlicense
 ----------------------------------------------------
@@ -45,42 +45,79 @@ serverRolesListFile = configparser.ConfigParser()
 
 serverRolesListFile.optionxform = str
 
-coreArtFile = configparser.ConfigParser()
-learnedArtFile = configparser.ConfigParser()
-
 #Global variables
-versionNumber = '0.05'
-moodFloat = 0.8;
+versionNumber = '0.07'
 
-print('Artie is starting! (Version ' + versionNumber + ')')
 
-print('Initializing/Training AI Chatbot...')
+print('Reading config and role list files...')
 
-#INITIALIZE AND TRAIN AI CHATBOT
-bot = ChatBot( #define tha chatbot
-    'Artie',
-    storage_adapter='chatterbot.storage.SQLStorageAdapter',
-    logic_adapters=[
-        'chatterbot.logic.MathematicalEvaluation',
-    #    'chatterbot.logic.TimeLogicAdapter',
-        'chatterbot.logic.BestMatch'
-        ],
-    database_uri='sqlite:///database.sqlite3'
-)
+#read/create the supporting data files
+try:
+    fileExists = open('config.txt', 'r') #Try to load the config file
 
-#trainer = ChatterBotCorpusTrainer(bot) #set bot trainer to corpus
-bot.set_trainer(ListTrainer) #set bot training to ListTrainer
+    configFile.sections() #initialize config file sections
+    configFile.read('config.txt') #load the config file
 
-#trainer.train(
-#    "chatterbot.corpus.english"
-#    )
+    fileExists = open('serverRolesList.txt', 'r')
 
-data = open('ArtieTrainingData.txt').read() #open the training file
-processedData = data.strip().split('\n') #convert the text data to a list data type
+    serverRolesListFile.sections()
+    serverRolesListFile.read('serverRolesList.txt')
+    
 
-bot.train(processedData) #train the bot with the processed training file
+    botToken = configFile['BotAPI']['bottoken'] #store the bot token in the variable
+    botName = configFile['BotAPI']['botname'] #store the bot name in the variable
+    botAuthor = configFile['BotAPI']['botauthor'] #store the bot author in the variable
+    convowakeword = configFile['BotAPI']['convowakeword'] #store the wake word in the variable
+except: #if the config file cannot be loaded properly
+    initialize_configfile() #run the initialize_configfile function
 
-print('Done Training! Connecting to Discord...')
+
+print(botName + ' is starting! (Version ' + versionNumber + ')\n-----------------')
+
+
+print("Initializing AI Chatbot...")
+
+#Check if intelligence database exists, make it if it doesn't
+try:
+    fileExists = open('Intelligence.sqlite3', 'r') #Try to load the config file#trainer = ChatterBotCorpusTrainer(bot) #set bot trainer to corpus
+    print("Intelligence database found!")
+    #INITIALIZE AND TRAIN AI CHATBOT
+    bot = ChatBot( #define tha chatbot
+        'Artie',
+        storage_adapter='chatterbot.storage.SQLStorageAdapter',
+        logic_adapters=[
+            'chatterbot.logic.MathematicalEvaluation',
+        #    'chatterbot.logic.TimeLogicAdapter',
+            'chatterbot.logic.BestMatch'
+            ],
+        database_uri='sqlite:///Intelligence.sqlite3'
+    )
+    bot.set_trainer(ListTrainer) #set bot training to ListTrainer
+
+except:
+    print("Intelligence database not found. AI must be trained.")
+
+    bot = ChatBot( #define tha chatbot
+        'Artie',
+        storage_adapter='chatterbot.storage.SQLStorageAdapter',
+        logic_adapters=[
+            'chatterbot.logic.MathematicalEvaluation',
+        #    'chatterbot.logic.TimeLogicAdapter',
+            'chatterbot.logic.BestMatch'
+            ],
+        database_uri='sqlite:///Intelligence.sqlite3'
+    )
+
+    bot.set_trainer(ListTrainer) #set bot training to ListTrainer
+
+    print("Training AI from TrainingData.txt, this may take a while...")
+
+    data = open('TrainingData.txt').read() #open the training file
+    processedData = data.strip().split('\n') #convert the text data to a list data type
+
+    bot.train(processedData) #train the bot with the processed training file
+
+print('Chatbot initialized successfully!\n-----------------')
 
 #FUNCTIONS--------------------------------------------
 
@@ -123,14 +160,14 @@ def roll_dice(numDice, sides):
 #COMMAND FUNCTIONS--------------------------------------------
 
 async def info(messageObject):#Information about the bot
-    msg = ('**' + botName + ' v' + versionNumber + '**\nAuthor: ' + botAuthor + "\n\n Type `~define` to add keywords/responses that I can use! For example:\n`~define owo = uwu!`").format(messageObject) #form a string with bot information
+    msg = '**' + botName + ' v' + versionNumber + '**\nAuthor: ' + botAuthor
     await client.send_message(messageObject.channel, msg) #send the info string in the channel that the ~info message came from
     return #stop on_message here
 
 async def help(messageObject):#Help command for users
     msg = "**Owo here are the commands you can use:**\n\
         `~info`: Information about the bot\n\
-        `~define [keyword] = [response]`: Add keywords and responses that I can use.\n\t\t\t Example: `~define owo = uwu!`\n\
+        `~teach [keyword] = [response]`: Teach me what certain phrases mean.\n\t\t\t Example: `~teach lol = 🤣`\n\
         `~wolf`: Get a random cute wolfie picture owo\n\
         `~cat`: Get a random cute kitty picture owo\n\
         `~dice [number of dice] [number of sides]`: Roll dice, useful for RPGs!\n\
@@ -199,21 +236,17 @@ async def dice(messageObject):#Rolls dice and sends the results in chat
     await client.send_message(messageObject.channel, msg)
     return    
 
-async def define(messageObject):#Adds a new keyword definition to the learned.art file
+async def teach(messageObject):#Trains the AI with one definition/response
     definitionMessage = messageObject.content.split(' = ') #split the message by the equals sign
-    trigger = definitionMessage[0].lower().replace('~define ', '')#remove ~define from the trigger part of the command and convert it to lower case
+    trigger = definitionMessage[0].replace('~teach ', '')#remove ~teach from the trigger part of the command 
     response = definitionMessage[1] #store the response part of the comand
 
     if trigger == convowakeword:
         await type_message(messageObject.channel, "You can't define my name as a keyword, I'll get confused >w<") #type a confirmation in the channel the command was said in
         return #stop on_message here
         
-    learnedArtFile.set('art::learned', trigger, response) #create a new key in the learnedArtFile config object
-
-    with open('learned.art', 'w') as f: #open the learned file
-        learnedArtFile.write(f) #write the new entry to the file
-            
-    await type_message(messageObject.channel, "Added entry\nTrigger: " + trigger + "\nResponse: " + response) #type a confirmation in the channel the command was said in
+    bot.train([trigger, response,])
+    await type_message(messageObject.channel, "Thank you, sensei!") #type a confirmation in the channel the command was said in
     return #stop on_message here
 
 async def deldef(messageObject):#Deletes a keyword in the case of a conflict
@@ -376,41 +409,23 @@ async def remRole(messageObject):#Removes a role from a user
             return
     await type_message(messageObject.channel, "That role doesn't exist. Check the spelling and case. uwo.")
 
-async def commandNotFound(messageObject):#Tries to run the response thingy
-    if configFile['BotAPI']['convowakeword'].lower() in messageObject.content.lower(): #if the bot's name is in the message...
-    
-        if "knight me" in messageObject.content.lower(): #if the message contains "knight me"...
-            user = messageObject.author #get the author of the message
-            role = discord.utils.get(user.server.roles, name="Knight") #get the Knight role
-            await client.add_roles(user, role) #add the knight role to the user who said knight me
-            await type_message(messageObject.channel, "*Produces sword and taps your left shoulder, then your right, then boops your snoot with it* I dub thee Sir Knight.")
-            return #stop on_message here
-        for key in coreArtFile['art::core']: #iterate over the custom responses..
-            if " " + key in messageObject.content.lower() or key + " " in messageObject.content.lower(): #if a response trigger is in the message..
-                await type_message(messageObject.channel, coreArtFile['art::core'][key]) #type and send the response using the type_response funtion
-                return #stop on_message here
-        for key in learnedArtFile['art::learned']: #iterate over the custom responses..
-            if " " + key in messageObject.content.lower() or key + " " in messageObject.content.lower(): #if a response trigger is in the message..
-                await type_message(messageObject.channel, learnedArtFile['art::learned'][key]) #type and send the response using the type_response funtion
-                return #stop on_message here
-        await client.add_reaction(messageObject, '🤔')
-
-    if messageObject.author.name.startswith("Zippy#0143"):
-        await type_message(messageObject.channel, "ZIPPY IS GAY")
-        print("ZIPPY IS GAY")
-        
-    #if all fails due to a response not being recognized..
-    suggestionTime = datetime.datetime.now() #create a time object
-    suggestionTimeString = str(suggestionTime); #create a time string
-    print("Unexpected message: ", suggestionTimeString, ', ', messageObject.author, ', ', messageObject.content); #print info about the unexpected message to the console
-
 async def commandNotFoundAI(messageObject):#Tries to run the response thingy
-    if configFile['BotAPI']['convowakeword'].lower() in messageObject.content.lower(): #if the bot's name is in the message...
-        bot_output = bot.get_response(messageObject.content)
-        await type_message(messageObject.channel, bot_output)
     if messageObject.content.lower().startswith('a.'):
-        bot_output = bot.get_response(messageObject.content[2:])
-        await type_message(messageObject.channel, bot_output)
+        print("AI INPUT: \"" + messageObject.content[2:] + "\"")
+        await client.send_typing(messageObject.channel) #set the typing status in Discord client
+        bot_output = bot.get_response(messageObject.content[2:]).text
+        print("AI OUTPUT: \"" + bot_output + "\"")
+        await client.send_message(messageObject.channel, bot_output)
+        return
+    if configFile['BotAPI']['convowakeword'].lower() in messageObject.content.lower(): #if the bot's name is in the message...
+        print("AI INPUT: \"" + messageObject.content + "\"")
+        await client.send_typing(messageObject.channel) #set the typing status in Discord client
+        bot_output = bot.get_response(messageObject.content).text
+        print("AI OUTPUT: \"" + bot_output + "\"")
+        await client.send_message(messageObject.channel, bot_output)
+        return
+    print("Training: " + messageObject.content)
+    #bot.train(messageObject.content)
 
 
 #DISCORD CLIENT FUNCTIONS--------------------------------------------
@@ -444,9 +459,9 @@ async def on_message(message): #when a message is sent in a channel Artie can se
         await info(message)
         return
 
-    if message.content.lower().startswith('~define'): #if the message starts with ~define
-        await define(message)
-        return
+    #if message.content.lower().startswith('~define'): #if the message starts with ~define
+    #    await define(message)
+    #    return
     
     if message.content.lower().startswith('~deldef'): #if the message starts with ~deldef
         await deldef(message)
@@ -480,48 +495,21 @@ async def on_message(message): #when a message is sent in a channel Artie can se
         await customRole(message)
         return
 
+    if message.content.lower().startswith('~teach'):
+        await teach(message)
+        return
+
     await commandNotFoundAI(message)
 
 
 @client.event
 async def on_ready(): #when the bot is connected and logged into Discord..
     #print information to the console
-    print('Logged in as') 
-    print(client.user.name) #prints the bot's username
-    print(client.user.id) #prints the bot's user ID
-    print('------')
+    print('Logged into Discord as ' + client.user.name + ' (User ID #' + client.user.id + ')\n-----------------') 
     await client.change_presence(game=discord.Game(name="type ~help")) #Set the playing status to help users
-
+    print('Debug log:')
 #ACTUAL CODE--------------------------------------------
 
-#read/create the supporting data files
-try:
-    fileExists = open('config.txt', 'r') #Try to load the config file
 
-    configFile.sections() #initialize config file sections
-    configFile.read('config.txt') #load the config file
-
-    fileExists = open('core.art', 'r') #Try to load the core art file
-
-    coreArtFile.sections() #initialize core art file sections
-    coreArtFile.read('core.art') #load the core art file
-
-    fileExists = open('learned.art', 'r') #Try to load the learned art file
-
-    learnedArtFile.sections() #initialize learned art file sections
-    learnedArtFile.read('learned.art') #load the learned art file
-
-    fileExists = open('serverRolesList.txt', 'r')
-
-    serverRolesListFile.sections()
-    serverRolesListFile.read('serverRolesList.txt')
-    
-
-    botToken = configFile['BotAPI']['bottoken'] #store the bot token in the variable
-    botName = configFile['BotAPI']['botname'] #store the bot name in the variable
-    botAuthor = configFile['BotAPI']['botauthor'] #store the bot author in the variable
-    convowakeword = configFile['BotAPI']['convowakeword'] #store the wake word in the variable
-except: #if the config file cannot be loaded properly
-    initialize_configfile() #run the initialize_configfile function
-
+print("Connecting to Discord...")
 client.run(botToken) #start the bot and its callback functions
