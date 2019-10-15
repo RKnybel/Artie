@@ -1,5 +1,5 @@
 [BotAPI]
-bottoken = Type your bot token here, and keep it a secret!
+bottoken = NTMxMTMyNDUwMzQxMTI2MTY0.DxJfqg.NG7vqrmJ54DoZ6CyOQjOHnr9e3M
 botname = Artie the Protogen
-botauthor = Saequel
-convowakeword = artie                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
+botauthor = Riley
+convowakeword = artie

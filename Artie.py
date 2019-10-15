@@ -174,7 +174,8 @@ async def help(messageObject):#Help command for users
         `~listroles`: List the roles that you can add with `~addrole`\n\
         `~addrole [role]`: Add a role to yourself\n\
         `~remrole [role]`: Remove a role from yourself\n\
-        `~customrole [Custom Role Name] #XXXXXX`. Color is in a 6-digit hex code. Add one custom role to yourself c:\n"
+        `~customrole [Custom Role Name] #XXXXXX`. Color is in a 6-digit hex code. Add one custom role to yourself c:\n\
+        `~fuwwy [text]`: Converts normal text to fuwwy text!\n"
 
     await client.send_message(messageObject.channel, msg);
     return
@@ -409,6 +410,33 @@ async def remRole(messageObject):#Removes a role from a user
             return
     await type_message(messageObject.channel, "That role doesn't exist. Check the spelling and case. uwo.")
 
+async def fuwwy(messageObject):
+	messageContent = messageObject.content[7:]
+	messageContent = messageContent.replace('r', 'w')
+	messageContent = messageContent.replace('l', 'w')
+	messageContent = messageContent.replace('R', 'W')
+	messageContent = messageContent.replace('L', 'W')
+
+	messageContent = messageContent.replace('na', 'nya')
+	messageContent = messageContent.replace('ne', 'nye')
+	messageContent = messageContent.replace('ni', 'nyi')
+	messageContent = messageContent.replace('no', 'nyo')
+	messageContent = messageContent.replace('nu', 'nyu')
+
+	messageContent = messageContent.replace('Na', 'Nya')
+	messageContent = messageContent.replace('Ne', 'Nye')
+	messageContent = messageContent.replace('Ni', 'Nyi')
+	messageContent = messageContent.replace('No', 'Nyo')
+	messageContent = messageContent.replace('Nu', 'Nyu')
+
+	messageContent = messageContent.replace('NA', 'NYA')
+	messageContent = messageContent.replace('NE', 'NYE')
+	messageContent = messageContent.replace('NI', 'NYI')
+	messageContent = messageContent.replace('NO', 'NYO')
+	messageContent = messageContent.replace('NU', 'NYU')
+
+	await client.send_message(messageObject.channel, messageContent)
+
 async def commandNotFoundAI(messageObject):#Tries to run the response thingy
     if messageObject.content.lower().startswith('a.'):
         print("AI INPUT: \"" + messageObject.content[2:] + "\"")
@@ -498,6 +526,10 @@ async def on_message(message): #when a message is sent in a channel Artie can se
     if message.content.lower().startswith('~teach'):
         await teach(message)
         return
+
+    if message.content.lower().startswith('~fuwwy'):
+    	await fuwwy(message)
+    	return
 
     await commandNotFoundAI(message)
 
